@@ -56,6 +56,18 @@ specs/
 
 O agente adapta-se aos arquivos já presentes. Se o projeto usa GitHub Spec Kit, reutiliza os artefatos existentes em vez de criar um segundo conjunto conflitante.
 
+## Scripts dos gates de qualidade
+
+Equivalentes em Python (stdlib) às ferramentas `crapper`, `dryer` e `mutator` do ub-mode, em `scripts/`:
+
+| Script | Gate | Resumo |
+|---|---|---|
+| `crap.py` | CRAP | `comp² × (1 − cob)³ + comp` por função; lê coverage.py JSON, lcov ou perfil do Go |
+| `dry.py` | Duplicação | Pares de funções com similaridade ≥ 0,8 |
+| `mutate.py` | Mutação | Muta o código, roda a suite, lista sobreviventes; restaura a fonte ao fim |
+
+Exemplo: `python3 scripts/crap.py src --coverage coverage.json --changed`. Detalhes, limitações e códigos de saída em `references/quality-gates.md`. Testes: `cd scripts && python3 -m unittest`.
+
 ## Exemplos
 
 - `examples/001-fix-desconto-centavos/` — trilha `fix`: um bug de arredondamento em um único `brief.md`.

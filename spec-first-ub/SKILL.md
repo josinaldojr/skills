@@ -113,7 +113,7 @@ O código gerado é controlado e validado, não só testado. Os seis gates abaix
 | Mutação | Cobrir o não coberto, matar os sobreviventes e apagar código morto |
 | Revisão | Checklist em `references/quality-gates.md`: causa raiz tratada, validação nas bordas, ilegais inviáveis no tipo, idempotência, sem comportamento fora do escopo |
 
-**Obtendo as ferramentas.** Procurar `crapper`, `dryer` e `mutator` (`command -v`). Se ausentes, usar o equivalente do stack indicado em `references/quality-gates.md` (por exemplo cobertura + complexidade para CRAP). Se não houver equivalente, não instalar nada sem autorização: o gate fica `NOT_MEASURED`.
+**Obtendo as ferramentas.** Ordem: (1) `crapper`, `dryer` e `mutator` do unclebob, se estiverem no PATH (`command -v`); (2) os scripts desta skill, `scripts/crap.py`, `scripts/dry.py` e `scripts/mutate.py`, equivalentes em Python stdlib (uso em `references/quality-gates.md`); (3) o equivalente do stack indicado lá. Cada script imprime `GATE <nome>: PASS|FAIL|NOT_MEASURED` e sai com 0/1/2; copiar essa linha como evidência. Sem nenhuma opção, não instalar nada sem autorização: o gate fica `NOT_MEASURED`. `mutate.py` reescreve arquivos no lugar (e restaura): rodar só com a árvore commitada ou stash disponível.
 
 **Regra de convergência.** `CONVERGED` exige em `PASS` ou `WAIVED` todos os gates obrigatórios da trilha (seis em `standard`/`high`, três em `fix`). `NOT_MEASURED` e `FAIL` bloqueiam. `WAIVED` só existe com justificativa escrita e **aprovação explícita do usuário** para dispensar aquele gate; o agente não se concede dispensa. Nunca inventar resultado nem threshold.
 
@@ -155,3 +155,4 @@ Na trilha `fix` e `trivial`, usar uma versão em duas ou três linhas (o que mud
 - `templates/constitution.md` — princípios de projeto (opcional)
 - `references/quality-gates.md` — política dos gates e exceções
 - `scripts/check_spec.py` — verificação determinística e limitada dos artefatos
+- `scripts/crap.py`, `scripts/dry.py`, `scripts/mutate.py` — gates CRAP, duplicação e mutação (equivalentes a `crapper`, `dryer`, `mutator`); `scripts/gatelib.py` é código compartilhado

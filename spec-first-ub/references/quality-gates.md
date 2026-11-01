@@ -39,7 +39,20 @@ Seis gates, cada um com status `PASS`, `FAIL`, `NOT_MEASURED` ou `WAIVED`. `CONV
 
 **CRAP** de uma função: `comp² × (1 − cobertura)³ + comp`, com `comp` a complexidade ciclomática e `cobertura` entre 0 e 1. Reduzir dividindo a função, testando-a, ou ambos. Avaliar se vale reduzir `case`/`switch` simples.
 
-**Ferramentas.** Primeiro `command -v crapper dryer mutator`. Se ausentes, usar equivalentes que o projeto já tenha. Exemplos, não exaustivos:
+**Scripts desta skill** (Python 3.9+, stdlib; rodar a partir da raiz do projeto, `S` = caminho de `scripts/`). Todos aceitam `--changed` (só o que o `git diff HEAD` tocou), imprimem `GATE <nome>: PASS|FAIL|NOT_MEASURED` e saem com 0/1/2.
+
+```bash
+# CRAP: precisa de cobertura (coverage json | lcov | go test -coverprofile)
+python3 S/crap.py src --coverage coverage.json --changed          # limite 10 (--threshold)
+# Duplicação: pares de funções com similaridade >= 0,8 (--threshold, --min-tokens)
+python3 S/dry.py src --changed
+# Mutação: reescreve a fonte no lugar e restaura; suite precisa estar verde antes
+python3 S/mutate.py src --test-cmd "python3 -m pytest -q" --changed --max 60
+```
+
+Limitações a registrar na evidência: Python é analisado por `ast`; JS/TS, Go e Java por heurística de regex (complexidade e fronteiras de função aproximadas). `dry.py` compara tokens com identificadores intactos, não é estrutural. `mutate.py` usa mutação textual por linha, amostra no máximo `--max` mutantes (reprodutível por `--seed`) e, fora de Python, mutante que não compila conta como morto. Sem arquivo de cobertura o CRAP é `NOT_MEASURED`, nunca 0% ou 100%.
+
+**Ferramentas.** Primeiro `command -v crapper dryer mutator`; depois os scripts acima. Se ainda faltar, usar equivalentes que o projeto já tenha. Exemplos, não exaustivos:
 
 | Stack | Cobertura + complexidade (CRAP) | Duplicação | Mutação |
 |---|---|---|---|
