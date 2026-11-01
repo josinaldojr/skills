@@ -1,0 +1,157 @@
+---
+name: spec-first-ub
+description: "Spec-Driven Development proporcional ao risco: brief de uma página para fixes pequenos; spec, plan, tasks, análise e convergência para features maiores. Une TDD red-green-refactor, simplicidade, modelagem de domínio e quality gates (CRAP, duplicação, mutação, revisão) inspirados no ub-mode. Use quando o usuário pedir SDD, planejar antes de codar, ou invocar /spec-first-ub."
+metadata:
+  version: "0.1.0"
+  origin: "Original, inspirada em unclebob/ub-mode e github/spec-kit; não é oficial"
+---
+
+# Spec First, Make it Work, Make it Right
+
+## Contrato inegociável
+
+1. **Antes do código:** compreender o problema e registrar o comportamento esperado de forma testável, com plano e tasks na profundidade que o risco pede (ver "Dimensionar o trabalho"). Nunca escrever ou alterar código de produção antes da autorização para implementar. Pode ler código, executar testes existentes e estudar o sistema durante discovery.
+2. **Uma decisão, um lugar:** a spec guarda requisitos e comportamentos; o plan guarda escolhas técnicas; tasks guardam execução. Não duplicar decisões em documentos divergentes.
+3. **Menor solução suficiente:** questionar a premissa e buscar subtração antes de adicionar camadas, abstrações, dependências ou ferramentas.
+4. **TDD no desenvolvimento:** para cada tarefa comportamental, observar um teste falhar pelo motivo esperado (RED), aplicar a menor mudança (GREEN), melhorar estrutura com testes passando (REFACTOR). Não escrever testes desonestos; quando inviável, justificar a estratégia de verificação alternativa.
+5. **Não confundir documento com evidência:** aprovação de spec não comprova implementação. Teste não executado não é teste aprovado. Um script pode verificar a estrutura dos artefatos, não a verdade de suas decisões.
+6. **Proporcionalidade:** o processo cresce com o risco, nunca além. Um fix pequeno não gera três documentos, e uma mudança de alto risco não cabe em um brief.
+7. **Autorização importa:** não fazer push, merge, deploy, exclusões destrutivas ou commits sem autorização explícita. Não marcar um documento como `approved` por conta própria.
+
+## Contexto e ativação
+
+No Claude Code, `/spec-first-ub <modo> <descrição>`; no Codex, `$spec-first-ub <modo> <descrição>`. Modos lógicos desta skill: `start` (dimensiona e escolhe a trilha), `fix` (força a trilha `fix`), `spec`, `plan`, `tasks`, `analyze`, `implement`, `verify`, `status`. São instruções de conversação **dentro desta skill**, e não comandos CLI independentes.
+
+Se nenhum modo for indicado, dimensionar o trabalho, identificar o estágio existente, escolher o próximo estágio seguro e informar o que será produzido. Se o pedido for ambíguo, tomar decisões reversíveis e sinalizar premissas; perguntar apenas se o bloqueio for material. Nunca presumir autorização para implementar a partir da simples vontade de construir uma feature.
+
+Reaproveitar arquivos existentes do repositório. Para trabalho `standard` ou `high`, usar `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `verification.md`. Se o projeto já usa Spec Kit, **não duplicar estrutura nem sobrescrever seus arquivos**; adaptar-se ao diretório ativo e respeitar a constituição já existente em `.specify/memory/constitution.md`. Caso contrário, adotar `specs/constitution.md` opcionalmente. Templates desta skill em `templates/`.
+
+## Dimensionar o trabalho
+
+Classificar antes de escrever qualquer documento e informar a trilha escolhida em uma linha. Na dúvida entre duas trilhas, escolher a menor e escalar se surgir risco.
+
+| Trilha | Quando | Artefatos | Autorização para implementar |
+|---|---|---|---|
+| `trivial` | Sem mudança de comportamento (só build/lint, sem os demais gates): typo, texto, comentário, renomeação local, ajuste de config sem efeito funcional | Nenhum arquivo. Uma frase no chat com o que será feito e como será verificado | A instrução do usuário já basta |
+| `fix` (risk `small`) | Bug ou ajuste pequeno, local, causa identificável, sem mudar contrato público, dados persistidos, segurança ou concorrência | `specs/<slug>/brief.md` (ou o mesmo conteúdo no chat se o projeto não versiona specs): problema, REQ/AC, abordagem, uma ou poucas tasks RED/GREEN/REFACTOR, verificação | Aprovação explícita do brief, como nas demais trilhas. Apresentar o brief, parar e só implementar depois do "pode seguir" do usuário |
+| `standard` | Feature nova ou mudança com mais de um comportamento, módulos ou decisões de design | `spec.md`, `plan.md`, `tasks.md`, `verification.md`, cada um conciso | Aprovação explícita após ANALYZE |
+| `high` | Segurança, dinheiro, dados, migração, concorrência, contrato público ou difícil de reverter | Os mesmos de `standard`, com riscos, rollback e observabilidade explícitos | Aprovação explícita e registrada, por documento |
+
+**Sinais de escalada.** Se durante um `fix` aparecer mudança de contrato, de schema, de permissão, mais de um comportamento independente ou causa incerta, parar, dizer por quê e promover para `standard` ou `high`. Reaproveitar o texto do brief como ponto de partida da spec.
+
+**O que nunca se reduz, em nenhuma trilha (exceto `trivial`, sem mudança de comportamento):** aprovação explícita antes de implementar e os gates de qualidade da trilha sobre o código alterado (Testes, Lint e Revisão no `fix`; os seis em `standard` e `high`). Além disso: comportamento esperado verificável, teste que falha antes da correção (ou justificativa), evidência real antes de declarar concluído, e honestidade sobre o que não foi executado.
+
+## Fluxo / gates
+
+As fases abaixo descrevem a trilha `standard`/`high`. Na trilha `fix`, SPEC, PLAN e TASKS colapsam nas seções do `brief.md` (Problema, Comportamento esperado, Abordagem, Tasks) e VERIFY vira a seção "Verificação" do mesmo arquivo. Os gates continuam valendo, só com menos texto.
+
+### 0. Discover — questionar antes de desenhar
+
+- Inspecionar conventions, codebase, contratos, testes, restrições, feedback de versões anteriores.
+- Identificar resultado observável, atores, domínio, invariantes e comportamentos existentes a preservar.
+- Perguntar: é possível **não** criar esta funcionalidade? O que pode ser removido? Qual mudança mínima resolve a causa?
+- Classificar a trilha conforme "Dimensionar o trabalho" (`trivial`, `fix`, `standard`, `high`). O risco ajusta a profundidade, não elimina o comportamento verificável. Em `high`, explicitar segurança, dados, concorrência, migração, rollback e observabilidade.
+
+### 1. SPEC — definir O QUÊ e POR QUÊ
+
+Criar/atualizar `spec.md` usando `templates/spec.md`.
+
+- Problema, resultado esperado, cenários de uso, requisitos `REQ-###`, aceites `AC-###` vinculados a requisitos, negativos/bordas, regras de domínio, limites e fora de escopo.
+- Critérios observáveis: Given/When/Then ou entrada/ação/saída; incluir caminho feliz, falhas, idempotência e concorrência quando aplicável.
+- Sem escolher framework, padrões de classe ou detalhes prematuros de implementação.
+- Se houver dúvidas críticas, apontar o bloqueio; não inventar contrato.
+- Gate SPEC: requisitos sem contradições evidentes, comportamentos testáveis, fora de escopo expresso; solicitar revisão do usuário antes de seguir para plan quando exigido pelo usuário ou por mudança de domínio/risco alto.
+
+### 2. PLAN — decidir COMO com design responsável
+
+Criar/atualizar `plan.md` usando `templates/plan.md`.
+
+- Levantar solução mais simples, ao menos uma alternativa real quando trade-off não for óbvio, e decisões com justificativas.
+- Modelar domínio e tipos de modo a desencorajar estados inválidos; validar entrada nas bordas; manter regras de negócio separadas de I/O; respeitar dependência entre camadas.
+- Considerar formato dos dados antes do algoritmo, contratos, compatibilidade, segurança, observabilidade, migração, concorrência e idempotência conforme relevância.
+- Planejar testes de comportamento, integração/contrato e rollback. Não criar arquitetura especulativa.
+- Gate PLAN: toda decisão técnica deriva de requisito/riscos; não há sobreengenharia sem justificativa.
+
+### 3. TASKS — fatiar verticalmente
+
+Criar/atualizar `tasks.md` usando `templates/tasks.md`.
+
+- Cada `TASK-###` deve citar `REQ-###` e `AC-###`, possuir entrega verificável e evidência esperada.
+- Ordenar por dependência e valor; preferir unidade vertical pequena a "criar todas as entidades, depois todos os testes".
+- Cada task comportamental contém microciclo RED / GREEN / REFACTOR. Tasks não comportamentais devem indicar uma checagem observável.
+- Gate TASKS: todo requisito e aceite devem estar cobertos, sem tasks órfãs, com condições de conclusão claras.
+
+### 4. ANALYZE — auditar antes de desenvolver
+
+- Revisar `spec.md`, `plan.md`, `tasks.md` juntos. Procurar lacunas, escopo não pedido, duplicação, critérios não testáveis, risco não mitigado e tasks sem rastreabilidade.
+- Corrigir **no documento fonte**; nunca silenciar inconsistências em resumo.
+- Se Python estiver disponível, rodar `python3 <skill-root>/scripts/check_spec.py specs/<slug> --gate check` (ver `references/quality-gates.md`). O script é só uma verificação estrutural.
+- Obter autorização humana explícita para implementar; somente então registrar `status: approved` em spec, plan e tasks. Verificar `--gate implement` se o script estiver disponível.
+- **STOP:** sem autorização explícita, entregar apenas os artefatos, próximos passos e pendências. Não avançar silenciosamente ao código.
+
+### 5. IMPLEMENT — make it work, then make it right
+
+Para cada task aprovada, em ordem:
+
+1. Confirmar objetivo e aceite referenciado. Ler código circundante; preservar comportamento não solicitado.
+2. **RED:** criar teste focado em comportamento observável e executar para confirmar falha pelo motivo correto. Para bug, reproduzir causa antes de corrigir. Se o teste honesto for inviável, registrar motivo e verificação alternativa antes de mudar código.
+3. **GREEN:** fazer a menor mudança que satisfaz o teste. Resolver a causa, não mascarar o sintoma; preservar fronteiras, contratos e idempotência relevante.
+4. **REFACTOR:** reduzir duplicação, complexidade e acoplamento, com os mesmos testes passando. Extrair abstração só se houver pressão real.
+5. **CHECK:** rodar testes pertinentes e lint/compilação, e registrar comando e resultado reais. Os gates de CRAP, duplicação, mutação e revisão rodam ao concluir o conjunto de tasks, antes de VERIFY (ver "Gates de qualidade do código").
+6. Atualizar checkbox da task só após evidência; se descobre nova exigência, parar a execução do escopo afetado, atualizar spec/plan/tasks e obter nova aprovação para alteração material.
+
+### Gates de qualidade do código (ao concluir IMPLEMENT)
+
+O código gerado é controlado e validado, não só testado. Os seis gates abaixo valem em `standard` e `high`. Na trilha `fix` são obrigatórios só **Testes, Lint/compilação e Revisão**; CRAP, duplicação e mutação são opcionais (rodar se for barato ou o código alterado for sensível, e então não podem terminar em `FAIL`). Todos se aplicam ao código alterado, e cada um termina em `PASS`, `FAIL`, `NOT_MEASURED` ou `WAIVED`:
+
+| Gate | Critério (inspirado no `ub-mode`) |
+|---|---|
+| Testes | Suite pertinente verde. Testes chamam o código como o usuário e checam o resultado visível. Um teste que passaria com toda função retornando nada é descartado |
+| Lint/compilação | Sem erro novo; compilador e linters não silenciados |
+| CRAP | Cada função alterada com CRAP < 10, reduzindo por divisão, por teste ou ambos. `case`/`switch` só se reduz se valer a pena |
+| Duplicação | Nenhuma duplicação com similaridade ≥ 0,8 sem justificativa. Eliminar sem abstrair por capricho |
+| Mutação | Cobrir o não coberto, matar os sobreviventes e apagar código morto |
+| Revisão | Checklist em `references/quality-gates.md`: causa raiz tratada, validação nas bordas, ilegais inviáveis no tipo, idempotência, sem comportamento fora do escopo |
+
+**Obtendo as ferramentas.** Procurar `crapper`, `dryer` e `mutator` (`command -v`). Se ausentes, usar o equivalente do stack indicado em `references/quality-gates.md` (por exemplo cobertura + complexidade para CRAP). Se não houver equivalente, não instalar nada sem autorização: o gate fica `NOT_MEASURED`.
+
+**Regra de convergência.** `CONVERGED` exige em `PASS` ou `WAIVED` todos os gates obrigatórios da trilha (seis em `standard`/`high`, três em `fix`). `NOT_MEASURED` e `FAIL` bloqueiam. `WAIVED` só existe com justificativa escrita e **aprovação explícita do usuário** para dispensar aquele gate; o agente não se concede dispensa. Nunca inventar resultado nem threshold.
+
+**Brief só no chat.** Sem `specs/` versionado, o `--gate verify` não se aplica: a resposta final traz a tabela dos gates obrigatórios com status e evidência reais, e o log.
+
+**Log.** Manter na seção de verificação um log curto de cada ação relevante e do motivo, e reportá-lo ao concluir.
+
+### 6. VERIFY / CONVERGE — spec como contrato de entrega
+
+- Comparar cada `AC-###` com código, teste e resultado observado; considerar falhas, compatibilidade, segurança e regressão.
+- Executar a suite e os gates de qualidade da trilha; preencher `verification.md` (ou a seção Verificação do brief) com evidências, status de cada gate, log e riscos residuais.
+- Se houver gap, adicionar task(s) e completar outro ciclo RED/GREEN/REFACTOR; nunca declarar `Converged` com gap bloqueador.
+- Sinalizar estado: `CONVERGED` somente se todos aceites comprovados, os gates obrigatórios da trilha em `PASS`/`WAIVED` e sem bloqueio; `PARTIAL` ou `BLOCKED` caso contrário.
+- Encerrar com changelog curto: *o quê*, *por quê*, *testes realmente executados*, *pendências*, *arquivos alterados*.
+
+## Regras de tomada de decisão
+
+- **Bugs:** reproduzir, isolar causa, especificar o comportamento esperado e o caso de regressão antes da correção.
+- **Código legado:** fazer uma caracterização do comportamento existente quando necessário; não reescrever módulos adjacentes sem relação.
+- **Mudança urgente:** a urgência não muda a trilha. O risco real define a profundidade; aprovação, teste que falha antes e evidência continuam valendo.
+- **Refatoração pura:** especificar invariantes de comportamento, baseline e evidência de equivalência; a spec não deve inventar feature nova.
+- **Restrições de ferramentas:** nunca inventar execução, resultados ou thresholds. Gate sem medição é `NOT_MEASURED` e bloqueia a convergência até medir ou ser dispensado pelo usuário.
+- **Trabalho paralelo:** tasks independentes podem ser delegadas somente quando não compartilham o mesmo estado mutável nem geram conflitos de integração.
+- **Logs e contexto:** manter registro enxuto das decisões, comandos e evidências. Não despejar histórico irrelevante no contexto principal.
+
+## Formato da resposta em cada fase
+
+`Stage | Feature | Artefatos escritos | Decisões | Riscos/pendências | Gate | Próximo passo`
+
+Na trilha `fix` e `trivial`, usar uma versão em duas ou três linhas (o que mudou, o que foi verificado, o que ficou pendente). Terminar o estágio de documentação com uma indicação inequívoca: `READY FOR REVIEW`, `APPROVED FOR IMPLEMENTATION` (somente se autorizado) ou `BLOCKED`.
+
+## Recursos
+
+- `templates/brief.md` — trilha fix, arquivo único
+- `templates/spec.md` — requisitos e critérios testáveis
+- `templates/plan.md` — arquitetura mínima, riscos e testes
+- `templates/tasks.md` — rastreabilidade e microciclos TDD
+- `templates/verification.md` — evidências de convergência
+- `templates/constitution.md` — princípios de projeto (opcional)
+- `references/quality-gates.md` — política dos gates e exceções
+- `scripts/check_spec.py` — verificação determinística e limitada dos artefatos
