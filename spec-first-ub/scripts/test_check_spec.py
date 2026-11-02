@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import check_spec as cs
 from check_spec import check_directory
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +76,53 @@ class CheckSpecTest(unittest.TestCase):
         self.write_verification("NOT_MEASURED")
         self.assertTrue(any("gate Mutação com status NOT_MEASURED" in x for x in check_directory(self.path, "verify")))
 
+
+class MarkdownParsingTest(unittest.TestCase):
+    def test_declaration_formats(self) -> None:
+        self.assertEqual(cs.parse_requirement("  - **REQ-001:** texto"), "REQ-001")
+        self.assertEqual(cs.parse_requirement("- **REQ-002** : texto"), "REQ-002")
+        self.assertIsNone(cs.parse_requirement("- **REQ-0012:** dígito a mais"))
+        self.assertIsNone(cs.parse_requirement("* **REQ-001:** marcador errado"))
+        self.assertEqual(cs.parse_acceptance("- **AC-001** (REQ-001): dado"), ("AC-001", "REQ-001"))
+        self.assertIsNone(cs.parse_acceptance("- **AC-001** REQ-001: sem parênteses"))
+        self.assertEqual(cs.parse_task("- [X] **TASK-003** [REQ-001] [AC-002] fazer"), ("X", "TASK-003", "REQ-001", "AC-002"))
+        self.assertIsNone(cs.parse_task("- [?] **TASK-003** [REQ-001] [AC-002]"))
+
+    def test_find_ids_is_word_bounded(self) -> None:
+        self.assertEqual(cs.find_ids("REQ-001, xREQ-002 REQ-0034 (REQ-005)", "REQ"), ["REQ-001", "REQ-005"])
+
+    def test_code_is_ignored_for_placeholders_and_ids(self) -> None:
+        text = "texto\n```java\nList<String> x; // TODO\n```\nuso `Map<K, V>` e `REQ-999`\n"
+        self.assertFalse(cs.has_placeholder(text))
+        self.assertNotIn("REQ-999", cs.find_ids(cs.strip_code(text), "REQ"))
+
+    def test_placeholder_detection(self) -> None:
+        self.assertTrue(cs.has_placeholder("Dado <contexto> quando"))
+        self.assertTrue(cs.has_placeholder("fazer isto (todo) depois"))
+        self.assertFalse(cs.has_placeholder("se a < b e c > d"))
+        self.assertFalse(cs.has_placeholder("veja <https://exemplo.com> e <br/> e </div>"))
+        self.assertFalse(cs.has_placeholder("TODOS os pedidos; todolist"))
+
+    def test_frontmatter_requires_closing_fence(self) -> None:
+        self.assertEqual(cs.split_frontmatter("---\nstatus: draft\n---\ncorpo"), ["status: draft"])
+        self.assertIsNone(cs.split_frontmatter("---\nstatus: draft\ncorpo"))
+        self.assertIsNone(cs.split_frontmatter("sem frontmatter"))
+
+
+class DirectoryRulesTest(CheckSpecTest):
+    def test_plan_referencing_undeclared_requirement_fails(self) -> None:
+        plan = self.path / "plan.md"
+        plan.write_text(plan.read_text(encoding="utf-8") + "\nDecisão para REQ-042.\n", encoding="utf-8")
+        self.assertTrue(any("plan.md: referência a requisito sem declaração: REQ-042" in x
+                            for x in check_directory(self.path, "check")))
+
+    def test_duplicate_gate_row_fails(self) -> None:
+        self.approve_and_close()
+        self.write_verification("PASS")
+        verification = self.path / "verification.md"
+        verification.write_text(verification.read_text(encoding="utf-8")
+                                + "| Testes | outra | FAIL | evidência registrada |\n", encoding="utf-8")
+        self.assertTrue(any("gate Testes aparece mais de uma vez" in x for x in check_directory(self.path, "verify")))
 
 class BriefTrackTest(unittest.TestCase):
     def setUp(self) -> None:

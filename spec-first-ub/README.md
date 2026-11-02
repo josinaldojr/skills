@@ -62,7 +62,7 @@ Equivalentes em Python (stdlib) às ferramentas `crapper`, `dryer` e `mutator` d
 
 | Script | Gate | Resumo |
 |---|---|---|
-| `crap.py` | CRAP | `comp² × (1 − cob)³ + comp` por função; lê coverage.py JSON, lcov ou perfil do Go |
+| `crap.py` | CRAP | `comp² × (1 − cob)³ + comp` por função; lê coverage.py JSON, Istanbul JSON, JaCoCo/Cobertura XML, lcov ou perfil do Go |
 | `dry.py` | Duplicação | Pares de funções com similaridade ≥ 0,8 |
 | `mutate.py` | Mutação | Muta o código, roda a suite, lista sobreviventes; restaura a fonte ao fim |
 

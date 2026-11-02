@@ -4,7 +4,7 @@
 Uso:
   crap.py src/ --coverage coverage.json [--changed] [--threshold 10]
 
-Cobertura aceita: coverage.py JSON (`coverage json`), lcov, perfil do Go (`-coverprofile`).
+Cobertura aceita: coverage.py JSON (`coverage json`), Istanbul JSON, JaCoCo/Cobertura XML, lcov, perfil do Go (`-coverprofile`).
 Saída: tabela e uma linha `GATE CRAP: PASS|FAIL|NOT_MEASURED`.
 Exit: 0 PASS, 1 FAIL, 2 NOT_MEASURED. Sem cobertura não há CRAP: nunca assume 0% nem 100%.
 """
@@ -25,10 +25,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("paths", nargs="+", help="arquivos ou diretórios de código")
     ap.add_argument("--coverage", required=True, help="arquivo de cobertura (json, lcov ou go cover profile)")
-    ap.add_argument("--threshold", type=float, default=10.0, help="limite exclusivo (padrão 10)")
+    ap.add_argument("--threshold", type=float, default=10.0, help="CRAP >= limite reprova (padrão 10)")
     ap.add_argument("--changed", action="store_true", help="só funções tocadas pelo `git diff HEAD`")
     ap.add_argument("--base", default="HEAD", help="base do diff para --changed")
     args = ap.parse_args(argv)
+    g.force_utf8_output()
 
     cov_path = Path(args.coverage)
     if not cov_path.is_file():
@@ -41,8 +42,14 @@ def main(argv: list[str] | None = None) -> int:
         print(g.verdict_line("CRAP", "NOT_MEASURED", "--changed exige repositório git"))
         return g.EXIT_NOT_MEASURED
 
+    try:
+        files = g.collect_files(args.paths)
+    except FileNotFoundError as missing:
+        print(g.verdict_line("CRAP", "NOT_MEASURED", f"alvo inexistente: {missing}"))
+        return g.EXIT_NOT_MEASURED
+
     rows, unmatched = [], set()
-    for f in g.collect_files(args.paths):
+    for f in files:
         if args.changed and f.resolve() not in changes:
             continue
         file_cov = g.coverage_for(cov, f)

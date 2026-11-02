@@ -50,7 +50,7 @@ python3 S/dry.py src --changed
 python3 S/mutate.py src --test-cmd "python3 -m pytest -q" --changed --max 60
 ```
 
-Limitações a registrar na evidência: Python é analisado por `ast`; JS/TS, Go e Java por heurística de regex (complexidade e fronteiras de função aproximadas). `dry.py` compara tokens com identificadores intactos, não é estrutural. `mutate.py` usa mutação textual por linha, amostra no máximo `--max` mutantes (reprodutível por `--seed`) e, fora de Python, mutante que não compila conta como morto. Sem arquivo de cobertura o CRAP é `NOT_MEASURED`, nunca 0% ou 100%.
+Limitações a registrar na evidência: nenhum script usa regex. Python é analisado por `ast`/`tokenize`; JS/TS, Go e Java por um lexer próprio (strings, comentários e literais regex reconhecidos) com casamento de chaves, então complexidade e fronteiras de função são aproximadas, sem parser de gramática completa. `dry.py` compara tokens com identificadores intactos por padrão; `--normalize` compara só a estrutura (detecta clones com variáveis renomeadas). `mutate.py` muta a AST em Python (regravando com `ast.unparse`) e tokens nas demais linguagens, amostra no máximo `--max` mutantes (reprodutível por `--seed`) e, fora de Python, mutante que não compila conta como morto. Se `.mutate-backup/` existir, uma execução anterior foi interrompida: restaure a fonte a partir dele antes de rodar de novo. Cobertura aceita: coverage.py JSON, Istanbul JSON, JaCoCo XML, Cobertura XML, lcov e perfil do Go. Sem arquivo de cobertura o CRAP é `NOT_MEASURED`, nunca 0% ou 100%. Alvo inexistente também é `NOT_MEASURED`.
 
 **Ferramentas.** Primeiro `command -v crapper dryer mutator`; depois os scripts acima. Se ainda faltar, usar equivalentes que o projeto já tenha. Exemplos, não exaustivos:
 
