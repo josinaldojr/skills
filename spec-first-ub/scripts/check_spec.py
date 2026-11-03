@@ -3,6 +3,12 @@
 
 Sem regex: o markdown é lido por um cursor linear (`Cursor`) e por varreduras simples.
 Blocos de código cercados e código inline são ignorados ao procurar IDs e placeholders.
+
+Gates, alinhados às ações da skill (explore → propose → apply):
+  propose  fim do PROPOSE: artefatos consistentes e rastreáveis, prontos para revisão (alias: check)
+  apply    início do APPLY: exige status: approved nos documentos (alias: implement)
+  verify   fim do APPLY: tasks fechadas, gates de qualidade e status: converged
+`explore` não tem gate: não produz artefato obrigatório.
 """
 from __future__ import annotations
 
@@ -11,6 +17,8 @@ import sys
 from pathlib import Path
 
 ID_DIGITS = 3
+GATE_ALIASES = {"check": "propose", "implement": "apply"}
+GATES = ("propose", "apply", "verify")
 PLACEHOLDER_WORDS = {"TBD", "TODO", "FIXME"}
 URL_PREFIXES = ("http://", "https://", "mailto:")
 
@@ -291,6 +299,7 @@ def duplicates(items: list[str], kind: str, errors: list[str]) -> None:
 # ---------------------------------------------------------------- verificação
 
 def check_directory(feature_dir: Path, gate: str) -> list[str]:
+    gate = GATE_ALIASES.get(gate, gate)
     errors: list[str] = []
     single_file = (feature_dir / "brief.md").is_file() and not (feature_dir / "spec.md").is_file()
     if single_file:
@@ -338,7 +347,7 @@ def check_directory(feature_dir: Path, gate: str) -> list[str]:
     for a in sorted(ac_ids - covered_ac): errors.append(f"AC sem task: {a}")
     for r in sorted(req_ids - {r for _, r in ac}): errors.append(f"REQ sem AC: {r}")
 
-    if gate in ("implement", "verify"):
+    if gate in ("apply", "verify"):
         metas = {"brief": brief_meta} if single_file else {"spec": spec_meta, "plan": plan_meta, "tasks": tasks_meta}
         for name, meta in metas.items():
             if single_file and gate == "verify":
@@ -370,20 +379,26 @@ def check_directory(feature_dir: Path, gate: str) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("feature_dir", type=Path, help="Diretório com spec.md, plan.md e tasks.md (ou só brief.md na trilha fix)")
-    parser.add_argument("--gate", choices=("check", "implement", "verify"), default="check")
+    parser.add_argument(
+        "--gate",
+        choices=GATES + tuple(GATE_ALIASES),
+        default="propose",
+        help="propose (alias check), apply (alias implement) ou verify",
+    )
     args = parser.parse_args()
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
     if not args.feature_dir.is_dir():
         print(f"FAIL: diretório inexistente: {args.feature_dir}", file=sys.stderr)
         return 2
-    errors = check_directory(args.feature_dir, args.gate)
+    gate = GATE_ALIASES.get(args.gate, args.gate)
+    errors = check_directory(args.feature_dir, gate)
     if errors:
-        print(f"FAIL [{args.gate}] — {len(errors)} erro(s) estrutural(is):")
+        print(f"FAIL [{gate}] — {len(errors)} erro(s) estrutural(is):")
         for error in errors:
             print(f"  - {error}")
         return 1
-    print(f"PASS [{args.gate}] — rastreabilidade estrutural consistente em {args.feature_dir}")
+    print(f"PASS [{gate}] — rastreabilidade estrutural consistente em {args.feature_dir}")
     print("AVISO: não valida semântica, autorização real, teste executado ou qualidade de código.")
     return 0
 

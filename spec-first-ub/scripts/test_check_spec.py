@@ -30,25 +30,32 @@ class CheckSpecTest(unittest.TestCase):
         file.write_text(content.replace(old, new), encoding="utf-8")
 
     def test_check_passes_valid_draft(self) -> None:
-        self.assertEqual([], check_directory(self.path, "check"))
+        self.assertEqual([], check_directory(self.path, "propose"))
+
+    def test_legacy_gate_aliases_match_new_names(self) -> None:
+        self.assertEqual(check_directory(self.path, "propose"), check_directory(self.path, "check"))
+        self.assertEqual(check_directory(self.path, "apply"), check_directory(self.path, "implement"))
+
+    def test_apply_error_names_the_new_gate(self) -> None:
+        self.assertTrue(any("gate apply" in x for x in check_directory(self.path, "implement")))
 
     def test_implement_fails_without_approval(self) -> None:
-        self.assertTrue(any("requer status: approved" in x for x in check_directory(self.path, "implement")))
+        self.assertTrue(any("requer status: approved" in x for x in check_directory(self.path, "apply")))
 
     def test_implement_passes_with_approval_marked(self) -> None:
         for name in ("spec.md", "plan.md", "tasks.md"):
             self.replace(name, "status: draft", "status: approved")
-        self.assertEqual([], check_directory(self.path, "implement"))
+        self.assertEqual([], check_directory(self.path, "apply"))
 
     def test_orphan_acceptance_fails(self) -> None:
         self.replace("tasks.md", "[AC-002]", "[AC-099]")
-        errors = check_directory(self.path, "check")
+        errors = check_directory(self.path, "propose")
         self.assertTrue(any("AC sem task: AC-002" in x for x in errors))
         self.assertTrue(any("AC ausente AC-099" in x for x in errors))
 
     def test_duplicate_task_fails(self) -> None:
         self.replace("tasks.md", "**TASK-002**", "**TASK-001**")
-        self.assertTrue(any("TASK duplicado" in x for x in check_directory(self.path, "check")))
+        self.assertTrue(any("TASK duplicado" in x for x in check_directory(self.path, "propose")))
 
     def test_verify_requires_evidence(self) -> None:
         self.assertTrue(any("verification.md" in x for x in check_directory(self.path, "verify")))
@@ -114,7 +121,7 @@ class DirectoryRulesTest(CheckSpecTest):
         plan = self.path / "plan.md"
         plan.write_text(plan.read_text(encoding="utf-8") + "\nDecisão para REQ-042.\n", encoding="utf-8")
         self.assertTrue(any("plan.md: referência a requisito sem declaração: REQ-042" in x
-                            for x in check_directory(self.path, "check")))
+                            for x in check_directory(self.path, "propose")))
 
     def test_duplicate_gate_row_fails(self) -> None:
         self.approve_and_close()
@@ -140,18 +147,18 @@ class BriefTrackTest(unittest.TestCase):
         self.brief.write_text(content.replace(old, new), encoding="utf-8")
 
     def test_brief_passes_check(self) -> None:
-        self.assertEqual([], check_directory(self.path, "check"))
+        self.assertEqual([], check_directory(self.path, "propose"))
 
     def test_brief_implement_requires_approval(self) -> None:
-        self.assertTrue(any("requer status: approved" in x for x in check_directory(self.path, "implement")))
+        self.assertTrue(any("requer status: approved" in x for x in check_directory(self.path, "apply")))
 
     def test_brief_implement_passes_when_approved(self) -> None:
         self.write("status: draft", "status: approved")
-        self.assertEqual([], check_directory(self.path, "implement"))
+        self.assertEqual([], check_directory(self.path, "apply"))
 
     def test_brief_orphan_acceptance_fails(self) -> None:
         self.write("[AC-001] Arredondar", "[AC-099] Arredondar")
-        self.assertTrue(any("AC ausente AC-099" in x for x in check_directory(self.path, "check")))
+        self.assertTrue(any("AC ausente AC-099" in x for x in check_directory(self.path, "propose")))
 
     def test_brief_verify_requires_converged_and_open_task_closed(self) -> None:
         errors = check_directory(self.path, "verify")

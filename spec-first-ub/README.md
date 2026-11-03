@@ -1,6 +1,6 @@
 # spec-first-ub — SDD com disciplina de engenharia
 
-Skill independente de agentes de programação, dimensionada pelo risco: serve tanto para um fix de uma linha quanto para uma feature grande. Combina **Spec → Plan → Tasks → Analyze → Implement (TDD) → Verify/Converge** com princípios de simplicidade, modelagem do domínio e qualidade de código.
+Skill independente de agentes de programação, dimensionada pelo risco: serve tanto para um fix de uma linha quanto para uma feature grande. Organiza-se em **explore → propose → apply**, que cobrem Spec → Plan → Tasks → Analyze → Implement (TDD) → Verify/Converge, com princípios de simplicidade, modelagem do domínio e qualidade de código.
 
 > Projeto original, **não oficial**, inspirado em [unclebob/ub-mode](https://github.com/unclebob/ub-mode) e [github/spec-kit](https://github.com/github/spec-kit). Não reproduz nem substitui nenhum dos dois projetos.
 
@@ -29,15 +29,15 @@ Se um `fix` revelar risco maior, o agente para e promove o trabalho para `standa
 
 No Claude Code, invocar com `/spec-first-ub`. No Codex, mencionar a skill com `$spec-first-ub` (ou selecioná-la em `/skills`). Os modos abaixo são argumentos textuais, não comandos independentes.
 
-- `/spec-first-ub start Exportar pedidos em CSV por período` — dimensiona e escolhe a trilha
-- `/spec-first-ub fix Desconto percentual está truncando centavos` — força a trilha fix
-- `/spec-first-ub spec` — elaborar requisitos e aceites, sem código
-- `/spec-first-ub plan` — definir design mínimo
-- `/spec-first-ub tasks` — fatiar entregas com RED/GREEN/REFACTOR
-- `/spec-first-ub analyze` — consistência e autorização
-- `/spec-first-ub implement` — **somente** após aprovação explícita
-- `/spec-first-ub verify` — evidências e convergência
-- `/spec-first-ub status` — estado atual
+O ciclo tem três ações, no estilo explorar → propor → executar:
+
+- `/spec-first-ub explore Exportar pedidos em CSV` — pensar com o agente: lê o código, compara opções, questiona premissas. **Não escreve código** e só grava documentos se você pedir
+- `/spec-first-ub propose exportar-pedidos-csv` — dimensiona a trilha e gera de uma vez spec, plan e tasks (ou o `brief.md`), audita a consistência e **para** para sua aprovação
+- `/spec-first-ub apply` — **somente** após aprovação explícita: executa as tasks em RED/GREEN/REFACTOR, marca os checkboxes, pausa em bloqueios, roda os gates e verifica a convergência
+
+As ações não são fases travadas: `explore` vale a qualquer momento (inclusive no meio do `apply`) e o `apply` pode atualizar os artefatos se a implementação revelar um problema de design (mudança material exige nova aprovação).
+
+Atalhos de granularidade fina, opcionais: `start` (dimensiona e escolhe a próxima ação), `fix` (força a trilha fix), `spec`, `plan`, `tasks`, `analyze` (refazem uma parte do `propose`), `implement` (= `apply`), `verify`, `status`.
 
 Estes são modos textuais da skill; no Codex, substitua o prefixo `/spec-first-ub` por `$spec-first-ub`. Não são executáveis de terminal independentes.
 
@@ -76,17 +76,17 @@ Exemplo: `python3 scripts/crap.py src --coverage coverage.json --changed`. Detal
 ## Verificador estrutural (opcional)
 
 ```bash
-python3 scripts/check_spec.py examples/002-exportar-pedidos-csv --gate check
+python3 scripts/check_spec.py examples/002-exportar-pedidos-csv --gate propose
 # Trilha fix (brief.md único):
-python3 scripts/check_spec.py examples/001-fix-desconto-centavos --gate check
-# Sairá com erro em --gate implement até que o humano aprove a documentação.
-python3 scripts/check_spec.py examples/002-exportar-pedidos-csv --gate implement
+python3 scripts/check_spec.py examples/001-fix-desconto-centavos --gate propose
+# Gate do início do apply (alias antigo: implement). Sairá com erro até que o humano aprove a documentação.
+python3 scripts/check_spec.py examples/002-exportar-pedidos-csv --gate apply
 python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
 `--gate verify` confere que os gates obrigatórios da trilha (seis em `standard`/`high`, três em `fix`) estão `PASS` ou `WAIVED` com evidência; não executa as ferramentas nem comprova que os números são reais.
 
-`--gate check` valida presença de arquivos, identificadores únicos, vínculos REQ/AC/TASK e cobertura estrutural. Não substitui uma revisão de qualidade do conteúdo.
+`--gate propose` (fim do `propose`; alias `check`) valida presença de arquivos, identificadores únicos, vínculos REQ/AC/TASK e cobertura estrutural. Não substitui uma revisão de qualidade do conteúdo.
 
 ## Comportamento deliberado
 

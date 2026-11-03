@@ -85,6 +85,6 @@ Em mudanças onde teste automatizado honesto é impraticável (ex.: configuraç�
 
 Na trilha `fix`, o diretório contém só `brief.md`; o verificador trata o arquivo como spec, plan, tasks e verificação ao mesmo tempo, e `--gate verify` exige `status: converged`, a seção `## Verificação` citando cada AC e a tabela com Testes, Lint/compilação e Revisão em `PASS`/`WAIVED` (os demais gates, se presentes, não podem estar `FAIL`).
 
-Execute `python3 /caminho/da/skill/scripts/check_spec.py /projeto/specs/<feature> --gate check` para verificar estrutura e rastreabilidade. `--gate implement` também exige frontmatter `status: approved` em spec, plan e tasks. `--gate verify` exige tasks concluídas, `verification.md` com status `converged` e a tabela de gates com os seis gates em `PASS` ou `WAIVED` (`WAIVED` com justificativa).
+Execute `python3 /caminho/da/skill/scripts/check_spec.py /projeto/specs/<feature> --gate propose` (alias `check`) para verificar estrutura e rastreabilidade. `--gate apply` (alias `implement`, início do `apply`) também exige frontmatter `status: approved` em spec, plan e tasks. `--gate verify` exige tasks concluídas, `verification.md` com status `converged` e a tabela de gates com os seis gates em `PASS` ou `WAIVED` (`WAIVED` com justificativa).
 
 O verificador confere que os gates foram registrados e estão `PASS`/`WAIVED`, mas **não** executa as ferramentas, não confirma que os números são verdadeiros, não faz revisão semântica e não confirma autorização humana, inclusive de `WAIVED`. O agente deve validar esses pontos separadamente.

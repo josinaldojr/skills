@@ -1,6 +1,6 @@
 ---
 name: spec-first-ub
-description: "Spec-Driven Development proporcional ao risco: brief de uma página para fixes pequenos; spec, plan, tasks, análise e convergência para features maiores. Une TDD red-green-refactor, simplicidade, modelagem de domínio e quality gates (CRAP, duplicação, mutação, revisão) inspirados no ub-mode. Use quando o usuário pedir SDD, planejar antes de codar, ou invocar /spec-first-ub."
+description: "Spec-Driven Development proporcional ao risco, em três ações (explore, propose, apply): brief de uma página para fixes pequenos; spec, plan, tasks, análise e convergência para features maiores. Une TDD red-green-refactor, simplicidade, modelagem de domínio e quality gates (CRAP, duplicação, mutação, revisão) inspirados no ub-mode. Use quando o usuário pedir SDD, planejar antes de codar, ou invocar /spec-first-ub."
 metadata:
   version: "0.1.0"
   origin: "Original, inspirada em unclebob/ub-mode e github/spec-kit; não é oficial"
@@ -20,9 +20,19 @@ metadata:
 
 ## Contexto e ativação
 
-No Claude Code, `/spec-first-ub <modo> <descrição>`; no Codex, `$spec-first-ub <modo> <descrição>`. Modos lógicos desta skill: `start` (dimensiona e escolhe a trilha), `fix` (força a trilha `fix`), `spec`, `plan`, `tasks`, `analyze`, `implement`, `verify`, `status`. São instruções de conversação **dentro desta skill**, e não comandos CLI independentes.
+No Claude Code, `/spec-first-ub <modo> <descrição>`; no Codex, `$spec-first-ub <modo> <descrição>`. O ciclo tem **três ações principais**, no estilo explorar → propor → executar:
 
-Se nenhum modo for indicado, dimensionar o trabalho, identificar o estágio existente, escolher o próximo estágio seguro e informar o que será produzido. Se o pedido for ambíguo, tomar decisões reversíveis e sinalizar premissas; perguntar apenas se o bloqueio for material. Nunca presumir autorização para implementar a partir da simples vontade de construir uma feature.
+| Ação | O que faz | Escreve arquivos? | Termina em |
+|---|---|---|---|
+| `explore` | Postura de parceiro de pensamento: investiga o código, compara opções, questiona premissas. Não é fluxo, não tem etapas nem saída obrigatória | Só se o usuário pedir para capturar | Clareza, ou oferta de `propose` |
+| `propose` | Dimensiona a trilha e gera **de uma vez** todos os artefatos até ficar pronto para implementar (SPEC → PLAN → TASKS → ANALYZE) | Sim, artefatos de documentação | `READY FOR REVIEW` e **parada** para aprovação |
+| `apply` | Executa as tasks aprovadas em loop RED/GREEN/REFACTOR, até concluir ou bloquear; depois roda os gates e o VERIFY | Sim, código e checkboxes | `CONVERGED`, `PARTIAL` ou `BLOCKED` |
+
+Atalhos e granularidade fina (opcionais, são só instruções de conversação **dentro desta skill**, e não comandos CLI): `start` (= dimensionar e escolher a próxima ação), `fix` (força a trilha `fix`), `spec`, `plan`, `tasks`, `analyze` (refazem uma parte de `propose`), `implement` (= `apply`), `verify`, `status`.
+
+Se nenhum modo for indicado, dimensionar o trabalho, identificar o estágio existente, escolher a próxima ação segura e informar o que será produzido. Se o pedido for ambíguo, tomar decisões reversíveis e sinalizar premissas; perguntar apenas se o bloqueio for material. Nunca presumir autorização para implementar a partir da simples vontade de construir uma feature.
+
+**As ações não são fases travadas.** `explore` pode ser invocado a qualquer momento (inclusive no meio do `apply`, quando uma task se mostra mais complexa que o previsto), e `apply` pode atualizar artefatos quando a implementação revelar um problema de design, desde que a mudança material seja reaprovada.
 
 Reaproveitar arquivos existentes do repositório. Para trabalho `standard` ou `high`, usar `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `verification.md`. Se o projeto já usa Spec Kit, **não duplicar estrutura nem sobrescrever seus arquivos**; adaptar-se ao diretório ativo e respeitar a constituição já existente em `.specify/memory/constitution.md`. Caso contrário, adotar `specs/constitution.md` opcionalmente. Templates desta skill em `templates/`.
 
@@ -43,14 +53,27 @@ Classificar antes de escrever qualquer documento e informar a trilha escolhida e
 
 ## Fluxo / gates
 
-As fases abaixo descrevem a trilha `standard`/`high`. Na trilha `fix`, SPEC, PLAN e TASKS colapsam nas seções do `brief.md` (Problema, Comportamento esperado, Abordagem, Tasks) e VERIFY vira a seção "Verificação" do mesmo arquivo. Os gates continuam valendo, só com menos texto.
+As fases abaixo descrevem a trilha `standard`/`high`. Agrupamento: **EXPLORE** = fase 0; **PROPOSE** = fases 1 a 4; **APPLY** = fases 5 e 6. Na trilha `fix`, SPEC, PLAN e TASKS colapsam nas seções do `brief.md` (Problema, Comportamento esperado, Abordagem, Tasks) e VERIFY vira a seção "Verificação" do mesmo arquivo. Os gates continuam valendo, só com menos texto.
 
-### 0. Discover — questionar antes de desenhar
+### 0. EXPLORE — pensar antes de desenhar
 
-- Inspecionar conventions, codebase, contratos, testes, restrições, feedback de versões anteriores.
-- Identificar resultado observável, atores, domínio, invariantes e comportamentos existentes a preservar.
-- Perguntar: é possível **não** criar esta funcionalidade? O que pode ser removido? Qual mudança mínima resolve a causa?
-- Classificar a trilha conforme "Dimensionar o trabalho" (`trivial`, `fix`, `standard`, `high`). O risco ajusta a profundidade, não elimina o comportamento verificável. Em `high`, explicitar segurança, dados, concorrência, migração, rollback e observabilidade.
+**É uma postura, não um fluxo.** Sem etapas fixas, sem sequência obrigatória, sem artefato obrigatório. Explorar é tempo de pensar, não de executar.
+
+- **Não implementar.** Pode ler arquivos, buscar no código e rodar comandos de leitura (incluindo testes existentes); nunca escreve código de produção. Se o usuário pedir para implementar, lembrar que isso vem depois de `propose` e aprovação.
+- **Fundamentar no código real.** Mapear arquitetura relevante, pontos de integração, padrões em uso, complexidade escondida, contratos, testes e restrições. Não teorizar no vazio.
+- **Curioso, não prescritivo.** Levantar várias direções e deixar o usuário seguir a que fizer sentido, em vez de um funil de perguntas. Não fingir entendimento: se algo está nebuloso, aprofundar.
+- **Questionar premissas, inclusive as próprias.** É possível **não** criar esta funcionalidade? O que pode ser removido? Qual mudança mínima resolve a causa? Comparar opções com tabelas e trade-offs; recomendar um caminho se pedido. Diagramas ASCII quando ajudarem.
+- **Mapear riscos e incógnitas.** Identificar resultado observável, atores, domínio, invariantes e comportamentos a preservar; sugerir spikes para o que não se sabe. Em `high`, explicitar segurança, dados, concorrência, migração, rollback e observabilidade.
+- **Ver o que já existe.** Checar `specs/` por trabalho em andamento. Se houver mudança ativa, ler seus artefatos e referenciá-los na conversa.
+- **Oferecer, não capturar sozinho.** Quando uma decisão se firmar, oferecer registrá-la no documento certo (requisito novo ou alterado → `spec.md`; decisão de design → `plan.md`; escopo → `spec.md`; trabalho novo → `tasks.md`; premissa invalidada → o artefato afetado). O usuário decide. Responder perguntas ou esclarecer dúvidas nunca é consentimento para escrever arquivos.
+- **Fechar sem pressão.** Pode terminar em clareza, em artefato atualizado, ou em "pronto para propor?". Um resumo (problema, abordagem que emergiu, perguntas abertas, próximos passos) é opcional.
+- Ao final, informar a trilha sugerida (`trivial`, `fix`, `standard`, `high`) conforme "Dimensionar o trabalho". O risco ajusta a profundidade, não elimina o comportamento verificável.
+
+### PROPOSE — fases 1 a 4
+
+Entrada: nome em kebab-case ou descrição do que construir. Se não houver entrada clara, perguntar o que o usuário quer construir e **não prosseguir sem entender**. Derivar o slug (ex.: "exportar pedidos em CSV" → `exportar-pedidos-csv`). Se já existir `specs/<slug>/`, perguntar se é para continuar o existente ou criar outro.
+
+Gerar os artefatos **em ordem de dependência, numa única passada**, até que tudo o que o `apply` exige esteja pronto: ler os artefatos anteriores antes de escrever o próximo, confirmar que cada arquivo foi realmente escrito, e mostrar uma linha de progresso por artefato ("Criado spec.md"). Se uma informação for criticamente incerta, perguntar; caso contrário, preferir decisões razoáveis e sinalizar premissas para manter o ritmo. Ao terminar, resumir: slug e local, artefatos criados com uma linha cada, pendências, e o convite para aprovar e rodar `apply`.
 
 ### 1. SPEC — definir O QUÊ e POR QUÊ
 
@@ -81,13 +104,25 @@ Criar/atualizar `tasks.md` usando `templates/tasks.md`.
 - Cada task comportamental contém microciclo RED / GREEN / REFACTOR. Tasks não comportamentais devem indicar uma checagem observável.
 - Gate TASKS: todo requisito e aceite devem estar cobertos, sem tasks órfãs, com condições de conclusão claras.
 
-### 4. ANALYZE — auditar antes de desenvolver
+### 4. ANALYZE — auditar antes de desenvolver (fecha o PROPOSE)
 
 - Revisar `spec.md`, `plan.md`, `tasks.md` juntos. Procurar lacunas, escopo não pedido, duplicação, critérios não testáveis, risco não mitigado e tasks sem rastreabilidade.
 - Corrigir **no documento fonte**; nunca silenciar inconsistências em resumo.
-- Se Python estiver disponível, rodar `python3 <skill-root>/scripts/check_spec.py specs/<slug> --gate check` (ver `references/quality-gates.md`). O script é só uma verificação estrutural.
-- Obter autorização humana explícita para implementar; somente então registrar `status: approved` em spec, plan e tasks. Verificar `--gate implement` se o script estiver disponível.
+- Se Python estiver disponível, rodar `python3 <skill-root>/scripts/check_spec.py specs/<slug> --gate propose` (ver `references/quality-gates.md`). O script é só uma verificação estrutural.
+- Obter autorização humana explícita para implementar; somente então registrar `status: approved` em spec, plan e tasks. Verificar `--gate apply` se o script estiver disponível.
 - **STOP:** sem autorização explícita, entregar apenas os artefatos, próximos passos e pendências. Não avançar silenciosamente ao código.
+
+### APPLY — fases 5 e 6
+
+Entrada: slug opcional. Se omitido, inferir da conversa; se houver só uma mudança ativa em `specs/`, usá-la; se ambíguo, perguntar. **Anunciar sempre** "Usando: <slug>" e como trocar.
+
+1. **Verificar estado.** Rodar `--gate apply` se o script existir. Sem `status: approved` registrado pelo humano, não editar código: voltar a `propose`/ANALYZE e parar. Se todas as tasks já estiverem concluídas, ir direto aos gates e ao VERIFY.
+2. **Ler o contexto**: spec, plan e tasks (ou o brief) por inteiro antes da primeira edição, e mostrar o progresso "N/M tasks concluídas" com as pendentes.
+3. **Laço**: executar as tasks pendentes em ordem, uma por vez, com o microciclo da fase 5, até concluir tudo ou bloquear. Anunciar "Task 3/7: <descrição>"; manter as mudanças mínimas e restritas à task; marcar o checkbox **imediatamente** após a evidência.
+4. **Pausar e perguntar quando**: a task for ambígua; a implementação revelar problema de design (sugerir atualizar os artefatos); houver erro, bloqueio ou teste que não falha pelo motivo esperado; ou o usuário interromper. **Não adivinhar.** Ao pausar, informar: progresso, o problema encontrado e 2 a 3 opções (a última sempre "outra abordagem"), e esperar a decisão.
+5. **Ao concluir as tasks**: rodar os gates de qualidade e o VERIFY (fase 6) no mesmo `apply`, e encerrar com o estado `CONVERGED`, `PARTIAL` ou `BLOCKED`.
+
+Saída durante o laço: `## Aplicando: <slug>` e, por task, `✓ Task N/M concluída`. Na pausa: `## Aplicação pausada` com progresso, problema e opções.
 
 ### 5. IMPLEMENT — make it work, then make it right
 
@@ -141,9 +176,9 @@ O código gerado é controlado e validado, não só testado. Os seis gates abaix
 
 ## Formato da resposta em cada fase
 
-`Stage | Feature | Artefatos escritos | Decisões | Riscos/pendências | Gate | Próximo passo`
+`Ação | Feature | Artefatos escritos | Decisões | Riscos/pendências | Gate | Próximo passo`
 
-Na trilha `fix` e `trivial`, usar uma versão em duas ou três linhas (o que mudou, o que foi verificado, o que ficou pendente). Terminar o estágio de documentação com uma indicação inequívoca: `READY FOR REVIEW`, `APPROVED FOR IMPLEMENTATION` (somente se autorizado) ou `BLOCKED`.
+`explore` não usa esse formato: é conversa livre. Na trilha `fix` e `trivial`, usar uma versão em duas ou três linhas (o que mudou, o que foi verificado, o que ficou pendente). Terminar `propose` com uma indicação inequívoca: `READY FOR REVIEW`, `APPROVED FOR IMPLEMENTATION` (somente se autorizado) ou `BLOCKED`. Terminar `apply` com `CONVERGED`, `PARTIAL` ou `BLOCKED`.
 
 ## Recursos
 
