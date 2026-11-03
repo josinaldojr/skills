@@ -14,6 +14,18 @@ Copie a pasta `spec-first-ub` para o diretório de skills suportado pelo seu age
 
 O arquivo inicial é `SKILL.md`. Não requer Spec Kit, Node, Python ou ferramentas externas para funcionar como **instrução de agente**. O script de validação é opcional e requer Python 3.10+.
 
+## Comandos por fase
+
+Um slash command por ação, em `commands/` (atalhos finos que invocam a skill):
+
+| Comando | Ação | Para quando |
+|---|---|---|
+| `/spec-explore <tema>` | explore | clareza, ou oferta de `/spec-propose` |
+| `/spec-propose <slug>` | propose | `READY FOR REVIEW`, aguardando sua aprovação |
+| `/spec-apply [slug]` | apply | `CONVERGED`, `PARTIAL` ou `BLOCKED` |
+
+Instalação (Claude Code): `./install.sh` cria symlinks da skill e dos comandos em `~/.claude/` (seguro rodar de novo ao adicionar comandos; `./install.sh --uninstall` remove). Como são links, um `git pull` já atualiza tudo. Manualmente: `cp commands/*.md ~/.claude/commands/`. No Codex, copie para `~/.codex/prompts/` e chame com `/prompts:spec-explore` etc. (confirme a convenção da sua versão).
+
 ## Trilhas por tamanho
 
 | Trilha | Quando | O que se escreve |
