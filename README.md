@@ -26,3 +26,7 @@ plugins/<plugin>/
 ```
 
 Para adicionar um plugin: criar `plugins/<nome>/` com `.claude-plugin/plugin.json` e registrá-lo em `plugins` no `marketplace.json`.
+
+## Licença
+
+[MIT](LICENSE)
