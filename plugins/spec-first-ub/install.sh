@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Instala spec-first-ub no Claude Code via symlinks (seguro rodar várias vezes).
+# Instala spec-first-ub no Claude Code via symlinks, sem o marketplace (seguro rodar várias vezes).
+# Preferir: /plugin marketplace add josinaldojr/skills && /plugin install spec-first-ub@josinaldojr-skills
 # Uso: ./install.sh [--uninstall]
 set -euo pipefail
 
@@ -31,7 +32,7 @@ link() { # link <origem> <destino>
   echo "ok $dst -> $src"
 }
 
-link "$REPO" "$SKILL_LINK"
+link "$REPO/skills/spec-first-ub" "$SKILL_LINK"
 for f in "$REPO"/commands/*.md; do
   link "$f" "$CMD_DIR/$(basename "$f")"
 done

@@ -87,4 +87,6 @@ Na trilha `fix`, o diretório contém só `brief.md`; o verificador trata o arqu
 
 Execute `python3 /caminho/da/skill/scripts/check_spec.py /projeto/specs/<feature> --gate propose` (alias `check`) para verificar estrutura e rastreabilidade. `--gate apply` (alias `implement`, início do `apply`) também exige frontmatter `status: approved` em spec, plan e tasks. `--gate verify` exige tasks concluídas, `verification.md` com status `converged` e a tabela de gates com os seis gates em `PASS` ou `WAIVED` (`WAIVED` com justificativa).
 
+Arquivamento: `python3 /caminho/da/skill/scripts/archive_spec.py /projeto/specs/<feature> [--dry-run] [--date AAAA-MM-DD]` roda o mesmo `--gate verify` e, só se passar, move a pasta para `specs/archive/<AAAA-MM-DD>-<feature>/`. Recusa destino existente e pasta já arquivada. Imprime `ARCHIVE: PASS|FAIL` e sai com 0 (arquivado ou dry-run ok), 1 (recusado) ou 2 (diretório inexistente).
+
 O verificador confere que os gates foram registrados e estão `PASS`/`WAIVED`, mas **não** executa as ferramentas, não confirma que os números são verdadeiros, não faz revisão semântica e não confirma autorização humana, inclusive de `WAIVED`. O agente deve validar esses pontos separadamente.

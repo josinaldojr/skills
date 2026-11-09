@@ -1,8 +1,8 @@
 ---
 name: spec-first-ub
-description: "Spec-Driven Development proporcional ao risco, em três ações (explore, propose, apply): brief de uma página para fixes pequenos; spec, plan, tasks, análise e convergência para features maiores. Une TDD red-green-refactor, simplicidade, modelagem de domínio e quality gates (CRAP, duplicação, mutação, revisão) inspirados no ub-mode. Use quando o usuário pedir SDD, planejar antes de codar, ou invocar /spec-first-ub."
+description: "Spec-Driven Development proporcional ao risco, em quatro ações (explore, propose, apply, archive): brief de uma página para fixes pequenos; spec, plan, tasks, análise e convergência para features maiores. Une TDD red-green-refactor, simplicidade, modelagem de domínio e quality gates (CRAP, duplicação, mutação, revisão) inspirados no ub-mode. Use quando o usuário pedir SDD, planejar antes de codar, arquivar uma spec concluída, ou invocar /spec-first-ub."
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   origin: "Original, inspirada em unclebob/ub-mode e github/spec-kit; não é oficial"
 ---
 
@@ -20,21 +20,22 @@ metadata:
 
 ## Contexto e ativação
 
-No Claude Code, `/spec-first-ub <modo> <descrição>`; no Codex, `$spec-first-ub <modo> <descrição>`. O ciclo tem **três ações principais**, no estilo explorar → propor → executar:
+No Claude Code, `/spec-first-ub <modo> <descrição>`; no Codex, `$spec-first-ub <modo> <descrição>`. O ciclo tem **quatro ações**, no estilo explorar → propor → executar → arquivar:
 
 | Ação | O que faz | Escreve arquivos? | Termina em |
 |---|---|---|---|
 | `explore` | Postura de parceiro de pensamento: investiga o código, compara opções, questiona premissas. Não é fluxo, não tem etapas nem saída obrigatória | Só se o usuário pedir para capturar | Clareza, ou oferta de `propose` |
 | `propose` | Dimensiona a trilha e gera **de uma vez** todos os artefatos até ficar pronto para implementar (SPEC → PLAN → TASKS → ANALYZE) | Sim, artefatos de documentação | `READY FOR REVIEW` e **parada** para aprovação |
-| `apply` | Executa as tasks aprovadas em loop RED/GREEN/REFACTOR, até concluir ou bloquear; depois roda os gates e o VERIFY | Sim, código e checkboxes | `CONVERGED`, `PARTIAL` ou `BLOCKED` |
+| `apply` | Executa as tasks aprovadas em loop RED/GREEN/REFACTOR, até concluir ou bloquear; depois roda os gates e o VERIFY | Sim, código e checkboxes | `CONVERGED`, `PARTIAL` ou `BLOCKED`; se `CONVERGED`, oferta de `archive` |
+| `archive` | Depois da revisão e finalização (`CONVERGED`), move `specs/<slug>/` para `specs/archive/<AAAA-MM-DD>-<slug>/` | Só move a pasta da spec | `ARCHIVED` ou `BLOCKED` |
 
-Atalhos e granularidade fina (opcionais, são só instruções de conversação **dentro desta skill**, e não comandos CLI): `start` (= dimensionar e escolher a próxima ação), `fix` (força a trilha `fix`), `spec`, `plan`, `tasks`, `analyze` (refazem uma parte de `propose`), `implement` (= `apply`), `verify`, `status`.
+Atalhos e granularidade fina (opcionais, são só instruções de conversação **dentro desta skill**, e não comandos CLI): `start` (= dimensionar e escolher a próxima ação), `fix` (força a trilha `fix`), `spec`, `plan`, `tasks`, `analyze` (refazem uma parte de `propose`), `implement` (= `apply`), `verify`, `status`. Instalada como plugin, cada ação também tem um slash command: `/spec-explore`, `/spec-propose`, `/spec-apply`, `/spec-archive`.
 
 Se nenhum modo for indicado, dimensionar o trabalho, identificar o estágio existente, escolher a próxima ação segura e informar o que será produzido. Se o pedido for ambíguo, tomar decisões reversíveis e sinalizar premissas; perguntar apenas se o bloqueio for material. Nunca presumir autorização para implementar a partir da simples vontade de construir uma feature.
 
 **As ações não são fases travadas.** `explore` pode ser invocado a qualquer momento (inclusive no meio do `apply`, quando uma task se mostra mais complexa que o previsto), e `apply` pode atualizar artefatos quando a implementação revelar um problema de design, desde que a mudança material seja reaprovada.
 
-Reaproveitar arquivos existentes do repositório. Para trabalho `standard` ou `high`, usar `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `verification.md`. Se o projeto já usa Spec Kit, **não duplicar estrutura nem sobrescrever seus arquivos**; adaptar-se ao diretório ativo e respeitar a constituição já existente em `.specify/memory/constitution.md`. Caso contrário, adotar `specs/constitution.md` opcionalmente. Templates desta skill em `templates/`.
+Reaproveitar arquivos existentes do repositório. Para trabalho `standard` ou `high`, usar `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `verification.md`. Mudanças concluídas ficam em `specs/archive/`, que **não conta como trabalho ativo**: ignorá-la ao inferir o slug ou procurar mudanças em andamento (pode ser lida como histórico). Se o projeto já usa Spec Kit, **não duplicar estrutura nem sobrescrever seus arquivos**; adaptar-se ao diretório ativo e respeitar a constituição já existente em `.specify/memory/constitution.md`. Caso contrário, adotar `specs/constitution.md` opcionalmente. Templates desta skill em `templates/`.
 
 ## Dimensionar o trabalho
 
@@ -53,7 +54,7 @@ Classificar antes de escrever qualquer documento e informar a trilha escolhida e
 
 ## Fluxo / gates
 
-As fases abaixo descrevem a trilha `standard`/`high`. Agrupamento: **EXPLORE** = fase 0; **PROPOSE** = fases 1 a 4; **APPLY** = fases 5 e 6. Na trilha `fix`, SPEC, PLAN e TASKS colapsam nas seções do `brief.md` (Problema, Comportamento esperado, Abordagem, Tasks) e VERIFY vira a seção "Verificação" do mesmo arquivo. Os gates continuam valendo, só com menos texto.
+As fases abaixo descrevem a trilha `standard`/`high`. Agrupamento: **EXPLORE** = fase 0; **PROPOSE** = fases 1 a 4; **APPLY** = fases 5 e 6; **ARCHIVE** = fase 7. Na trilha `fix`, SPEC, PLAN e TASKS colapsam nas seções do `brief.md` (Problema, Comportamento esperado, Abordagem, Tasks) e VERIFY vira a seção "Verificação" do mesmo arquivo. Os gates continuam valendo, só com menos texto.
 
 ### 0. EXPLORE — pensar antes de desenhar
 
@@ -64,7 +65,7 @@ As fases abaixo descrevem a trilha `standard`/`high`. Agrupamento: **EXPLORE** =
 - **Curioso, não prescritivo.** Levantar várias direções e deixar o usuário seguir a que fizer sentido, em vez de um funil de perguntas. Não fingir entendimento: se algo está nebuloso, aprofundar.
 - **Questionar premissas, inclusive as próprias.** É possível **não** criar esta funcionalidade? O que pode ser removido? Qual mudança mínima resolve a causa? Comparar opções com tabelas e trade-offs; recomendar um caminho se pedido. Diagramas ASCII quando ajudarem.
 - **Mapear riscos e incógnitas.** Identificar resultado observável, atores, domínio, invariantes e comportamentos a preservar; sugerir spikes para o que não se sabe. Em `high`, explicitar segurança, dados, concorrência, migração, rollback e observabilidade.
-- **Ver o que já existe.** Checar `specs/` por trabalho em andamento. Se houver mudança ativa, ler seus artefatos e referenciá-los na conversa.
+- **Ver o que já existe.** Checar `specs/` (fora de `specs/archive/`) por trabalho em andamento; o arquivo serve de histórico de decisões passadas. Se houver mudança ativa, ler seus artefatos e referenciá-los na conversa.
 - **Oferecer, não capturar sozinho.** Quando uma decisão se firmar, oferecer registrá-la no documento certo (requisito novo ou alterado → `spec.md`; decisão de design → `plan.md`; escopo → `spec.md`; trabalho novo → `tasks.md`; premissa invalidada → o artefato afetado). O usuário decide. Responder perguntas ou esclarecer dúvidas nunca é consentimento para escrever arquivos.
 - **Fechar sem pressão.** Pode terminar em clareza, em artefato atualizado, ou em "pronto para propor?". Um resumo (problema, abordagem que emergiu, perguntas abertas, próximos passos) é opcional.
 - Ao final, informar a trilha sugerida (`trivial`, `fix`, `standard`, `high`) conforme "Dimensionar o trabalho". O risco ajusta a profundidade, não elimina o comportamento verificável.
@@ -114,7 +115,7 @@ Criar/atualizar `tasks.md` usando `templates/tasks.md`.
 
 ### APPLY — fases 5 e 6
 
-Entrada: slug opcional. Se omitido, inferir da conversa; se houver só uma mudança ativa em `specs/`, usá-la; se ambíguo, perguntar. **Anunciar sempre** "Usando: <slug>" e como trocar.
+Entrada: slug opcional. Se omitido, inferir da conversa; se houver só uma mudança ativa em `specs/` (excluindo `specs/archive/`), usá-la; se ambíguo, perguntar. **Anunciar sempre** "Usando: <slug>" e como trocar.
 
 1. **Verificar estado.** Rodar `--gate apply` se o script existir. Sem `status: approved` registrado pelo humano, não editar código: voltar a `propose`/ANALYZE e parar. Se todas as tasks já estiverem concluídas, ir direto aos gates e ao VERIFY.
 2. **Ler o contexto**: spec, plan e tasks (ou o brief) por inteiro antes da primeira edição, e mostrar o progresso "N/M tasks concluídas" com as pendentes.
@@ -163,6 +164,17 @@ O código gerado é controlado e validado, não só testado. Os seis gates abaix
 - Se houver gap, adicionar task(s) e completar outro ciclo RED/GREEN/REFACTOR; nunca declarar `Converged` com gap bloqueador.
 - Sinalizar estado: `CONVERGED` somente se todos aceites comprovados, os gates obrigatórios da trilha em `PASS`/`WAIVED` e sem bloqueio; `PARTIAL` ou `BLOCKED` caso contrário.
 - Encerrar com changelog curto: *o quê*, *por quê*, *testes realmente executados*, *pendências*, *arquivos alterados*.
+- Se `CONVERGED` e a mudança vive em `specs/<slug>/`, perguntar se deve arquivá-la agora (ação `archive`). Arquivar só com o "sim" do usuário; sem resposta, deixar como próximo passo.
+
+### 7. ARCHIVE — fechar a mudança depois da revisão
+
+Entrada: slug opcional, resolvido como no `apply` (anunciar "Usando: <slug>"). Só existe para mudanças com artefatos em `specs/`; `trivial` e brief só no chat não têm o que arquivar.
+
+1. **Confirmar que acabou.** Rodar `--gate verify`; sem `PASS` (tasks abertas, gate sem `PASS`/`WAIVED`, `status` diferente de `converged`), não arquivar: listar o que falta e indicar `apply`. Sem Python, conferir à mão os mesmos itens e dizer que a checagem foi manual.
+2. **Arquivar.** `python3 <skill-root>/scripts/archive_spec.py specs/<slug> --dry-run` mostra o destino; sem `--dry-run`, move `specs/<slug>/` para `specs/archive/<AAAA-MM-DD>-<slug>/` (data de hoje, `--date` para outra). O script recusa destino existente e pasta já arquivada; não apaga nem altera o conteúdo. Sem Python, mover a pasta para o mesmo destino (`git mv` se versionado).
+3. **Relatar.** Copiar a linha `ARCHIVE: ...`, informar origem e destino e lembrar que a mudança ainda não foi commitada. Commit, push e merge seguem a regra 7 do contrato.
+
+Se o projeto usa Spec Kit, não mover os diretórios dele: perguntar ao usuário qual convenção de arquivamento seguir.
 
 ## Regras de tomada de decisão
 
@@ -178,7 +190,7 @@ O código gerado é controlado e validado, não só testado. Os seis gates abaix
 
 `Ação | Feature | Artefatos escritos | Decisões | Riscos/pendências | Gate | Próximo passo`
 
-`explore` não usa esse formato: é conversa livre. Na trilha `fix` e `trivial`, usar uma versão em duas ou três linhas (o que mudou, o que foi verificado, o que ficou pendente). Terminar `propose` com uma indicação inequívoca: `READY FOR REVIEW`, `APPROVED FOR IMPLEMENTATION` (somente se autorizado) ou `BLOCKED`. Terminar `apply` com `CONVERGED`, `PARTIAL` ou `BLOCKED`.
+`explore` não usa esse formato: é conversa livre. Na trilha `fix` e `trivial`, usar uma versão em duas ou três linhas (o que mudou, o que foi verificado, o que ficou pendente). Terminar `propose` com uma indicação inequívoca: `READY FOR REVIEW`, `APPROVED FOR IMPLEMENTATION` (somente se autorizado) ou `BLOCKED`. Terminar `apply` com `CONVERGED`, `PARTIAL` ou `BLOCKED`, e `archive` com `ARCHIVED` ou `BLOCKED`.
 
 ## Recursos
 
@@ -190,4 +202,5 @@ O código gerado é controlado e validado, não só testado. Os seis gates abaix
 - `templates/constitution.md` — princípios de projeto (opcional)
 - `references/quality-gates.md` — política dos gates e exceções
 - `scripts/check_spec.py` — verificação determinística e limitada dos artefatos
+- `scripts/archive_spec.py` — move uma mudança `CONVERGED` para `specs/archive/<data>-<slug>/`
 - `scripts/crap.py`, `scripts/dry.py`, `scripts/mutate.py` — gates CRAP, duplicação e mutação (equivalentes a `crapper`, `dryer`, `mutator`); `scripts/gatelib.py` é código compartilhado

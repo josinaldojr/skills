@@ -1,0 +1,11 @@
+{
+  "name": "spec-first-ub",
+  "version": "0.2.0",
+  "description": "Spec-Driven Development proporcional ao risco (explore, propose, apply, archive) com TDD e quality gates (CRAP, duplicação, mutação, revisão).",
+  "author": {
+    "name": "josinaldojr"
+  },
+  "homepage": "https://github.com/josinaldojr/skills/tree/main/plugins/spec-first-ub",
+  "repository": "https://github.com/josinaldojr/skills",
+  "keywords": ["sdd", "spec-driven-development", "tdd", "quality-gates", "planning"]
+}

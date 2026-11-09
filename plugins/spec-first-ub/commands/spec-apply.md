@@ -9,4 +9,5 @@ Regras desta ação:
 - Antes de qualquer código, confirme que os artefatos foram aprovados explicitamente por mim (`scripts/check_spec.py --gate apply`). Sem aprovação, pare e peça.
 - Execute as tasks em loop RED → GREEN → REFACTOR, marcando os checkboxes; pause em bloqueios.
 - Ao concluir, rode os gates da trilha e o VERIFY. Termine em `CONVERGED`, `PARTIAL` ou `BLOCKED`, com evidência real.
+- Se terminar em `CONVERGED` e a spec estiver em `specs/`, pergunte se quero arquivá-la agora (`/spec-archive`). Só arquive com meu "sim".
 - Sem commit, push, merge ou deploy sem minha autorização explícita.
